@@ -116,7 +116,7 @@
                         </div>
                         <button data-measure="braco" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8E6A] font-semibold hover:bg-[#EAE7E2] transition text-left">💪 Braço (cm)</button>
                         <button data-measure="cintura" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8E6A] font-semibold hover:bg-[#EAE7E2] transition text-left">🌀 Cintura (cm)</button>
-                        <button data-measure="abdomen" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8E6A] font-semibold hover:bg-[#EAE7E2] transition text-left">🌀 Abdômen (cm)</button>
+                        <button data-measure="abdomen" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8B6A] font-semibold hover:bg-[#EAE7E2] transition text-left">🌀 Abdômen (cm)</button>
                         <button data-measure="quadril" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8E6A] font-semibold hover:bg-[#EAE7E2] transition text-left">🍑 Quadril (cm)</button>
                     </div>
 
@@ -252,7 +252,7 @@
                     const prompt = "Gere uma dica de bem-estar curta, encorajadora e geral para alguém em uma jornada de saúde, focando em consciência corporal, consistência ou hábitos positivos. Não dê conselhos médicos ou dietéticos específicos. Mantenha-a concisa e inspiradora.";
                     chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                     const payload = { contents: chatHistory };
-                    const apiKey = ""; 
+                    const apiKey = "AIzaSyDv8ulaKWiQylrdpfcc5KyT5nypYRPPQI0"; 
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                     const response = await fetch(apiUrl, {
