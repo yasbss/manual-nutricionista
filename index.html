@@ -5,9 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guia Interativo para Consulta Nutricional - Yasmin Bernardes</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Expose Firebase modules to global scope for easier access in other scripts
+        window.firebase = {
+            initializeApp,
+            auth: { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged },
+            firestore: { getFirestore, doc, setDoc, updateDoc, onSnapshot }
+        };
+    </script>
     <!-- Chosen Palette: Base (#F8F5F0), Primary (#6B8E6A), Accent (#D4A3A1) -->
     <!-- Application Structure Plan: A single-page, scrollable application with a sticky navigation header. The structure is task-oriented, guiding the user through preparation steps. Key sections include an interactive checklist and a visual guide for taking measurements. This structure was chosen to transform a linear text manual into an engaging, step-by-step tool, making the information more digestible and reducing cognitive load for the patient. -->
-    <!-- Visualization & Content Choices: Report Info: 'Como tirar suas medidas'. Goal: Inform & Engage. Viz/Presentation: Interactive diagram of a human figure built with HTML/CSS. Interaction: User clicks on measurement names (e.g., 'Braço', 'Cintura'). This highlights the corresponding body part on the diagram and displays the specific instructions and an input field. Justification: This interactive approach is more intuitive and less error-prone than static text, improving accuracy and user engagement. Library/Method: Vanilla JS for DOM manipulation. Report Info: 'Antes da consulta' checklist. Goal: Organize. Viz/Presentation: A series of styled cards in a grid. Interaction: Links to external questionnaire. Justification: Breaks down tasks into clear, manageable steps. New Feature: 'Gerar Dica de Bem-Estar'. Goal: Motivate & Engage. Viz/Presentation: Button that triggers LLM call, displaying a motivational text. Interaction: Click button to generate tip. Justification: Provides dynamic, encouraging content, enhancing user experience. -->
+    <!-- Visualization & Content Choices: Report Info: 'Como tirar suas medidas'. Goal: Inform & Engage. Viz/Presentation: Interactive diagram of a human figure built with HTML/CSS. Interaction: User clicks on measurement names (e.g., 'Braço', 'Cintura'). This highlights the corresponding body part on the diagram and displays the specific instructions and an input field. Justification: This interactive approach is more intuitive and less error-prone than static text, improving accuracy and user engagement. Library/Method: Vanilla JS for DOM manipulation. Report Info: 'Antes da consulta' checklist. Goal: Organize. Viz/Presentation: A series of styled cards in a grid. Interaction: Links to external questionnaire. Justification: Breaks down tasks into clear, manageable steps. New Feature: 'Gerar Dica de Bem-Estar'. Goal: Motivate & Engage. Viz/Presentation: Button that triggers LLM call, displaying a motivational text. Interaction: Click button to generate tip. Justification: Provides dynamic, encouraging content, enhancing user experience. New Feature: Save Measurements. Goal: Persistence & User Convenience. Viz/Presentation: Input fields automatically save and load data. Interaction: User types, data saves automatically. Justification: Improves user experience by remembering inputs and allowing progress tracking. Library/Method: Firestore for data storage, Vanilla JS for handling input and display. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
@@ -37,6 +50,7 @@
                 <a href="#medidas" class="text-[#6B8E6A] hover:text-[#D4A3A1] transition">Medidas</a>
                 <a href="#atendimento" class="text-[#6B8E6A] hover:text-[#D4A3A1] transition">Atendimento</a>
                 <a href="#pagamento" class="text-[#6B8E6A] hover:text-[#D4A3A1] transition">Pagamento</a>
+                <a href="#envio-plano-alimentar" class="text-[#6B8E6A] hover:text-[#D4A3A1] transition">Plano Alimentar</a>
                 <a href="#contato" class="text-[#6B8E6A] hover:text-[#D4A3A1] transition">Contato</a>
             </div>
             <a href="#preparacao" class="md:hidden bg-[#D4A3A1] text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-[#C29290] transition">Começar</a>
@@ -50,6 +64,11 @@
             <p class="max-w-3xl mx-auto text-gray-600 mb-8">
                 Preparei este guia interativo com muito carinho para te orientar antes da nossa consulta online. Com ele, você conseguirá se preparar com tranquilidade e garantir que nosso tempo juntos seja leve, prático e totalmente personalizado para você.
             </p>
+            <!-- Seção para a foto da nutricionista -->
+            <div class="mt-8 mb-12">
+                <img src="https://i.postimg.cc/ThFxk0Qm/image-536a97.jpg" alt="Foto da Nutricionista Yasmin Bernardes" class="rounded-full mx-auto shadow-lg border-4 border-[#D4A3A1] w-48 h-48 object-cover">
+                <p class="text-gray-500 text-sm mt-4">Olá! Sou a Yasmin Bernardes, sua nutricionista.</p>
+            </div>
         </section>
 
         <section id="preparacao" class="mb-16 md:mb-24">
@@ -62,19 +81,26 @@
                 <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200 hover:shadow-lg transition-shadow">
                     <h3 class="font-bold text-lg text-[#6B8E6A] mb-3">📝 1. Questionário de Avaliação</h3>
                     <p class="text-gray-600 text-sm mb-4">Preencha o formulário online com suas informações de saúde, rotina e hábitos. É essencial para um atendimento focado em você.</p>
-                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdQXRUX6uqVbWxUtXq4orlK7pu45QE_LaGY_MMENUjk5vvd3A/viewform?pli=1" target="_blank" class="inline-block bg-[#D4A3A1] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-[#C29290] transition">Acessar Questionário</a>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdQXRUX6uqVbWxUtXq4orlK7pu45QE_LaGY_MMENUjk5vvd3A/viewform?pli=1" target="_blank" class="inline-flex items-center justify-center bg-[#D4A3A1] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-[#C29290] transition h-10">Acessar Questionário</a>
                 </div>
 
                 <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200 hover:shadow-lg transition-shadow">
                     <h3 class="font-bold text-lg text-[#6B8E6A] mb-3">🍽️ 2. Registro Alimentar</h3>
                     <p class="text-gray-600 text-sm mb-4">Anote tudo o que consumir durante 2 dias da semana e 1 dia do final de semana. Inclua horários, quantidades e modo de preparo.</p>
-                    <p class="text-xs text-gray-500">💡 Dica: anote logo após cada refeição para não esquecer!</p>
+                    
+                    <a href="https://drive.google.com/file/d/1ZWyfEoOie3B_wNRMvN4b6cDuEWO8fqlK/view?usp=sharing" target="_blank" class="inline-flex items-center justify-center bg-[#6B8E6A] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-[#5A7E59] transition h-10">Ver Modelo de Registro</a>
                 </div>
 
                 <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200 hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-1">
                     <h3 class="font-bold text-lg text-[#6B8E6A] mb-3">📸 3. Fotos (Opcional)</h3>
-                    <p class="text-gray-600 text-sm mb-4">Se sentir confortável, tire fotos de frente, lado e costas. Elas ajudam a visualizar sua evolução de forma clara e personalizada.</p>
-                    <p class="text-xs text-gray-500">📷 Lembre-se: mesmo horário e roupas semelhantes.</p>
+                    <p class="text-gray-600 text-sm mb-4">O envio das fotos não é obrigatório. Só envie se se sentir confortável. Elas são usadas para acompanhar sua evolução de forma mais visual e personalizada.</p>
+                    <p class="text-gray-600 text-sm mt-4">Caso deseje enviar, siga estas orientações:</p>
+                    <ul class="list-disc list-inside text-gray-700 mt-2 space-y-1">
+                        <li>Foto de frente: em pé, pés paralelos aos ombros, postura ereta, queixo na linha do horizonte.</li>
+                        <li>Foto de lado: braços elevados até os ombros, mantendo a postura.</li>
+                        <li>Foto de costas: igual à posição de frente, mas de costas para a câmera.</li>
+                    </ul>
+                    <p class="text-xs text-gray-500 mt-4">📷 Tire as fotos sempre no mesmo horário, com roupas semelhantes, e use o temporizador do celular.</p>
                 </div>
             </div>
         </section>
@@ -82,7 +108,7 @@
         <section id="medidas" class="mb-16 md:mb-24">
             <div class="text-center mb-12">
                 <h2 class="text-2xl md:text-3xl font-bold mb-2">Como Tirar Suas Medidas</h2>
-                <p class="text-gray-600 max-w-2xl mx-auto">Use uma fita métrica e relaxe o corpo, sem apertar a fita ou prender a respiração. Clique em cada medida abaixo para ver como fazer e anotar seu resultado.</p>
+                <p class="text-gray-600 max-w-2xl mx-auto">Use uma fita métrica e relaxe o corpo, sem apertar a fita ou prender a respiração. Clique em cada medida abaixo para ver como fazer.</p>
             </div>
 
             <div class="flex flex-col md:flex-row gap-8 items-start">
@@ -94,7 +120,7 @@
                         <div id="figure-arm-left" class="figure-part absolute top-[60px] left-[-40px] h-24 w-8 rounded-lg"></div>
                         <div id="figure-arm-right" class="figure-part absolute top-[60px] right-[-40px] h-24 w-8 rounded-lg"></div>
                         <div id="figure-waist" class="figure-part absolute top-[110px] left-1/2 -translate-x-1/2 h-4 w-16"></div>
-                        <div id="figure-abdomen" class="figure-part absolute top-[138px] left-1/2 -translate-x-1/2 h-4 w-18"></div>
+                        <div id="figure-abdomen" class="figure-part absolute top-[125px] left-1/2 -translate-x-1/2 h-8 w-20"></div> <!-- Adjusted height, width, and top -->
                         <div id="figure-hips" class="figure-part absolute top-[160px] left-1/2 -translate-x-1/2 h-14 w-24 rounded-b-lg"></div>
                         <div id="figure-leg-left" class="figure-part absolute bottom-0 left-[2px] h-36 w-12 rounded-lg"></div>
                         <div id="figure-leg-right" class="figure-part absolute bottom-0 right-[2px] h-36 w-12 rounded-lg"></div>
@@ -114,10 +140,10 @@
                             <label for="peso" class="block text-sm font-medium text-gray-700">📍 Peso (kg)</label>
                             <input type="number" id="peso" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#6B8E6A] focus:ring-[#6B8E6A]">
                         </div>
-                        <button data-measure="braco" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8E6A] font-semibold hover:bg-[#EAE7E2] transition text-left">💪 Braço (cm)</button>
-                        <button data-measure="cintura" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8E6A] font-semibold hover:bg-[#EAE7E2] transition text-left">🌀 Cintura (cm)</button>
-                        <button data-measure="abdomen" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8B6A] font-semibold hover:bg-[#EAE7E2] transition text-left">🌀 Abdômen (cm)</button>
-                        <button data-measure="quadril" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8E6A] font-semibold hover:bg-[#EAE7E2] transition text-left">🍑 Quadril (cm)</button>
+                        <button data-measure="braco" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8E6A] font-semibold hover:bg-[#EAE7E2] transition text-left">💪 Braço</button>
+                        <button data-measure="cintura" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8E6A] font-semibold hover:bg-[#EAE7E2] transition text-left">🌀 Cintura</button>
+                        <button data-measure="abdomen" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8B6A] font-semibold hover:bg-[#EAE7E2] transition text-left">🌀 Abdômen</button>
+                        <button data-measure="quadril" class="measure-btn bg-[#F8F5F0] p-3 rounded-lg text-[#6B8E6A] font-semibold hover:bg-[#EAE7E2] transition text-left">🍑 Quadril</button>
                     </div>
 
                     <div class="text-center">
@@ -129,6 +155,9 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="text-center mt-8 text-sm text-gray-500">
+                <p id="status-message">Status: Aguardando interação.</p>
             </div>
         </section>
 
@@ -150,7 +179,7 @@
                     <h3 class="font-bold text-lg text-[#6B8E6A] mb-3">📩 Envio das Informações</h3>
                     <p class="text-gray-600 mb-4">Envie pelo WhatsApp ou e-mail os seguintes itens:</p>
                     <ul class="space-y-2 text-gray-600">
-                        <li class="flex items-center"><span class="text-[#D4A3A1] mr-2">&#10003;</span> Questionário preenchido</li>
+                        <li class="flex items-center"><span class="text-[#D4A3A1] mr-2">&#10003;</span> Informar que o questionário foi preenchido</li>
                         <li class="flex items-center"><span class="text-[#D4A3A1] mr-2">&#10003;</span> Registro alimentar de 3 dias</li>
                         <li class="flex items-center"><span class="text-[#D4A3A1] mr-2">&#10003;</span> Fotos (se desejar)</li>
                         <li class="flex items-center"><span class="text-[#D4A3A1] mr-2">&#10003;</span> Medidas corporais</li>
@@ -177,6 +206,19 @@
             </div>
         </section>
 
+        <!-- Novo Tópico: Envio do Plano Alimentar -->
+        <section id="envio-plano-alimentar" class="mb-16 md:mb-24 bg-[#F8F5F0]/50 p-8 rounded-2xl">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold mb-2 text-[#6B8E6A]">⏳ 7. Envio do Plano Alimentar</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">Seu plano alimentar será preparado com cuidado e atenção aos detalhes que discutirmos durante a consulta.</p>
+            </div>
+            <div class="bg-white p-8 rounded-xl shadow-md border border-stone-200 max-w-xl mx-auto">
+                <p class="text-gray-600 mb-4">📦 Prazo de envio: até 5 dias úteis após a consulta e confirmação do pagamento.</p>
+                <p class="text-gray-600 mb-4">Isso garante tempo para que eu avalie todas as informações com calma e monte uma proposta individualizada, respeitando sua rotina, gostos e necessidades.</p>
+                <p class="text-sm text-gray-500">💬 Caso precise de algo com urgência, me avise para tentarmos antecipar, dentro do possível!</p>
+            </div>
+        </section>
+
         <section id="contato" class="text-center mb-16 md:mb-24">
             <h2 class="text-2xl md:text-3xl font-bold mb-4 text-[#6B8E6A]">🤍 Estou aqui para te apoiar!</h2>
             <p class="max-w-3xl mx-auto text-gray-600 mb-8">
@@ -184,7 +226,7 @@
             </p>
             <div class="flex flex-col md:flex-row justify-center items-center gap-4 text-gray-700">
                 <p class="flex items-center"><span class="text-[#D4A3A1] mr-2">&#128241;</span> Instagram: <a href="https://www.instagram.com/yasminnutricionista" target="_blank" class="text-[#D4A3A1] hover:underline">@yasminnutricionista</a></p>
-                <p class="flex items-center"><span class="text-[#D4A3A1] mr-2">&#128231;</span> E-mail: <a href="mailto:yasminnutri@hotmail.om" class="text-[#D4A3A1] hover:underline">yasminnutri@hotmail.com</a></p>
+                <p class="flex items-center"><span class="text-[#D4A3A1] mr-2">&#128231;</span> E-mail: <a href="mailto:yasminnutri@hotmail.com" class="text-[#D4A3A1] hover:underline">yasminnutri@hotmail.com</a></p>
                 <p class="flex items-center"><span class="text-[#D4A3A1] mr-2">&#128222;</span> WhatsApp: <a href="https://wa.me/5534920005376" target="_blank" class="text-[#D4A3A1] hover:underline">(34) 92000-5376</a></p>
             </div>
         </section>
@@ -192,10 +234,29 @@
     </main>
 
     <footer class="bg-[#6B8E6A] text-white py-6 text-center text-sm">
-        <p>&copy; 2025 Yasmin Bernardes – Nutricionista - CRN9 24461. Todos os direitos reservados.</p>
+        <p>&copy; 2025 Yasmin Bernardes – Nutricionista. Todos os direitos reservados.</p>
     </footer>
 
     <script>
+        // Firebase global variables (provided by Canvas environment)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // Placeholder for user's Firebase config
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY", // <-- SUBSTITUA PELA SUA CHAVE API DO FIREBASE
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+
+        // Firebase instances (will be initialized later)
+        let app;
+        let db;
+        let auth;
+        let userId = null; // Will store the authenticated user ID
+
         const measurements = {
             braco: {
                 instruction: "Meça no meio do caminho entre ombro e cotovelo, com o braço estendido ao lado do corpo. Dobre o braço para encontrar o ponto médio, depois estenda novamente e meça ali.",
@@ -215,13 +276,105 @@
             }
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const instructionDisplay = document.getElementById('instructions');
             const measureButtons = document.querySelectorAll('.measure-btn');
             const figureParts = document.querySelectorAll('.figure-part');
             const generateTipBtn = document.getElementById('generate-tip-btn');
             const tipDisplay = document.getElementById('tip-display');
+            const statusMessage = document.getElementById('status-message');
 
+            // Initialize Firebase
+            try {
+                app = firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore.getFirestore(app);
+                auth = firebase.auth.getAuth(app);
+
+                // Authenticate user
+                firebase.auth.onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        loadMeasurements(); // Load measurements once authenticated
+                        statusMessage.textContent = 'Dados carregados.'; // Optional: confirm success
+                    } else {
+                        // Sign in anonymously if no user is found (e.g., first visit)
+                        try {
+                            if (typeof __initial_auth_token !== 'undefined') {
+                                await firebase.auth.signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await firebase.auth.signInAnonymously(auth);
+                            }
+                        } catch (anonError) {
+                            console.error("Erro ao autenticar anonimamente:", anonError);
+                            statusMessage.textContent = ''; // Removed the alarming message from UI
+                            // The save/load functions will still show messages if interaction happens.
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error("Erro ao inicializar Firebase:", error);
+                statusMessage.textContent = ''; // Removed the alarming message from UI
+            }
+
+            // Function to save a single measurement
+            const saveMeasurement = async (fieldId, value) => {
+                if (!userId) {
+                    console.warn("Usuário não autenticado para salvar dados.");
+                    statusMessage.textContent = 'Não autenticado para salvar.';
+                    return;
+                }
+
+                const userDocRef = firebase.firestore.doc(db, `artifacts/${appId}/users/${userId}/measurements/user_data`);
+                statusMessage.textContent = 'Salvando...';
+
+                try {
+                    // Use setDoc with merge: true to update specific fields without overwriting others
+                    await firebase.firestore.setDoc(userDocRef, { [fieldId]: value }, { merge: true });
+                    statusMessage.textContent = 'Salvo!';
+                } catch (error) {
+                    console.error("Erro ao salvar medida:", error);
+                    statusMessage.textContent = 'Erro ao salvar.';
+                }
+            };
+
+            // Function to load measurements
+            const loadMeasurements = () => {
+                if (!userId) {
+                    console.warn("Usuário não autenticado para carregar dados.");
+                    return;
+                }
+
+                const userDocRef = firebase.firestore.doc(db, `artifacts/${appId}/users/${userId}/measurements/user_data`);
+                statusMessage.textContent = 'Carregando dados...';
+
+                firebase.firestore.onSnapshot(userDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        // Only load for altura and peso
+                        const alturaInput = document.getElementById('altura');
+                        if (alturaInput && data.altura !== undefined) {
+                            alturaInput.value = data.altura;
+                        }
+                        const pesoInput = document.getElementById('peso');
+                        if (pesoInput && data.peso !== undefined) {
+                            pesoInput.value = data.peso;
+                        }
+                        statusMessage.textContent = 'Dados carregados.';
+                    } else {
+                        statusMessage.textContent = 'Nenhum dado salvo ainda.';
+                    }
+                }, (error) => {
+                    console.error("Erro ao carregar dados:", error);
+                    statusMessage.textContent = 'Erro ao carregar dados.';
+                });
+            };
+
+            // Attach event listeners to static input fields
+            document.getElementById('altura').addEventListener('input', (e) => saveMeasurement('altura', e.target.value));
+            document.getElementById('peso').addEventListener('input', (e) => saveMeasurement('peso', e.target.value));
+
+            // Modify the measureButtons click handler to only display instruction, no input
             measureButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     const measureKey = button.dataset.measure;
@@ -231,16 +384,14 @@
                         instructionDisplay.innerHTML = `
                             <div class="text-center">
                                 <p class="text-gray-700 mb-2">${data.instruction}</p>
-                                <label for="${measureKey}-input" class="block text-sm font-medium text-gray-700">Seu ${button.textContent.replace('(cm)', '').trim()} (cm)</label>
-                                <input type="number" id="${measureKey}-input" class="mt-1 block w-full max-w-[150px] mx-auto rounded-md border-gray-300 shadow-sm focus:border-[#6B8E6A] focus:ring-[#6B8E6A] text-center">
                             </div>
                         `;
+                    }
 
-                        figureParts.forEach(part => part.classList.remove('active'));
-                        const activePart = document.getElementById(data.figurePart);
-                        if (activePart) {
-                            activePart.classList.add('active');
-                        }
+                    figureParts.forEach(part => part.classList.remove('active'));
+                    const activePart = document.getElementById(data.figurePart);
+                    if (activePart) {
+                        activePart.classList.add('active');
                     }
                 });
             });
